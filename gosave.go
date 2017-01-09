@@ -15,11 +15,15 @@ type Savings struct {
 	Balance float64
 }
 
+var netIncome int
+var totalSaving float64
+
 func main() {
 	var err error
 	var csvFile string
 
 	flag.StringVar(&csvFile, "file", "", "CSV file name")
+	flag.IntVar(&netIncome, "income", 0, "Net income (after tax)")
 
 	flag.Parse()
 
@@ -61,6 +65,7 @@ func main() {
 
 	var balanceEnd, balanceStart float64
 	var month time.Time
+	var months int
 	for i, row := range savings {
 		//fmt.Printf("%+v\n", row)
 		if month.IsZero() {
@@ -71,7 +76,9 @@ func main() {
 				balanceEnd = row.Balance
 			}
 		} else if month.Month() != row.Date.Month() {
-			fmt.Printf("%10s %d, saved $%10.2f, balanceStart $%10.2f, balanceEnd $%10.2f\n", month.Month(), month.Year(), balanceEnd-balanceStart, balanceStart, balanceEnd)
+			months++
+			//fmt.Printf("%10s %d, saved $%10.2f, balanceStart $%10.2f, balanceEnd $%10.2f\n", month.Month(), month.Year(), balanceEnd-balanceStart, balanceStart, balanceEnd)
+			PrintSaving(month, balanceEnd-balanceStart)
 			month = row.Date.Time
 			if ascending {
 				balanceStart = row.Balance
@@ -87,9 +94,20 @@ func main() {
 
 		// last row
 		if i+1 == len(savings) {
-			fmt.Printf("%10s %d, saved $%10.2f, balanceStart $%10.2f, balanceEnd $%10.2f\n", month.Month(), month.Year(), balanceEnd-balanceStart, balanceStart, balanceEnd)
+			PrintSaving(month, balanceEnd-balanceStart)
 		}
 	}
+	var pc float64
+	if netIncome > 0 {
+		adjustedIncome := float64(netIncome) * float64(months) / 12
+		pc = (totalSaving / float64(adjustedIncome)) * 100
+	}
+	fmt.Printf("\nTotal Saved: $%10.2f %7.2f%%\n", totalSaving, pc)
+}
+
+func PrintSaving(month time.Time, saving float64) {
+	totalSaving += saving
+	fmt.Printf("%10s %d, saved $%10.2f\n", month.Month(), month.Year(), saving)
 }
 
 type DateTime struct {
